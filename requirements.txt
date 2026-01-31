@@ -1,0 +1,10 @@
+semanticscholar
+joblib
+streamlit
+pydantic
+openai
+scikit-learn
+matplotlib
+numpy
+aiohttp
+content_curator
