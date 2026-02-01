@@ -1,64 +1,6 @@
 # ScholarAgent - 科研猎手
 
-[![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces)
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://streamlit.io)
-
 ScholarAgent 是一个智能科研助手系统，专为科研人员设计，能够模拟真实科研工作者的找资料、看论文、找idea的完整旅程。
-
-## 🚀 在线体验
-
-您可以直接在 Hugging Face Spaces 上体验 ScholarAgent，无需本地部署！
-
-## ☁️ 云端部署指南
-
-### 方案一：Hugging Face Spaces（推荐）
-
-1. **Fork 或克隆仓库到 GitHub**
-
-2. **创建 Hugging Face Space**
-   - 访问 https://huggingface.co/spaces
-   - 点击 "Create new Space"
-   - 选择 "Streamlit" 作为 SDK
-   - 选择 "Public" 或 "Private"
-
-3. **连接 GitHub 仓库**
-   - 在 Space Settings 中选择 "Link to GitHub"
-   - 选择您的 ScholarAgent 仓库
-   - HF 会自动检测 `app.py` 并部署
-
-4. **配置 Secrets（API 密钥）**
-   - 进入 Space Settings > Repository secrets
-   - 添加以下 secrets（至少一个）：
-     ```
-     OPENAI_API_KEY=sk-xxx
-     QWEN_API_KEY=xxx
-     DEEPSEEK_API_KEY=xxx
-     GEMINI_API_KEY=xxx
-     ```
-
-5. **等待部署完成**
-   - 通常需要 2-5 分钟
-   - 部署成功后会获得公开 URL
-
-### 方案二：Streamlit Community Cloud
-
-1. 将代码推送到 GitHub（public repo）
-2. 访问 https://share.streamlit.io
-3. 点击 "New app"，选择仓库和 `app.py`
-4. 在 Advanced settings 中配置 Secrets
-5. 点击 Deploy
-
-### 方案三：Docker 部署
-
-```bash
-# 构建镜像
-docker build -t scholaragent .
-
-# 运行容器
-docker run -p 8501:7860 \
-  -e OPENAI_API_KEY=your-key \
-  scholaragent
-```
 
 ## 🎯 核心功能
 
