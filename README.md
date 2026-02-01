@@ -1,6 +1,6 @@
 # ScholarAgent - 科研猎手     
 
-## 作者在宁波出差，（核心文件夹backend暂未上传）,将上架huggingface
+## 作者在宁波，（核心文件夹backend暂未上传）,将上架huggingface
 
 ScholarAgent 是一个基于LLM的智能科研助手系统，采用混合检索架构，将大语言模型的语义理解能力与传统学术数据库检索相结合，显著提升论文搜索的精准度和相关性。
 
