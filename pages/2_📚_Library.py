@@ -13,12 +13,12 @@ logger = logging.getLogger(__name__)
 from backend.content_curator import ContentCurator
 
 st.set_page_config(
-    page_title="ScholarAgent - 论文收藏库",
+    page_title="ScholarAgent - Paper Library",
     page_icon="📚",
     layout="wide"
 )
 
-st.title("📚 论文收藏库")
+st.title("Paper Library")
 
 # Get global settings from session state
 llm_provider = st.session_state.get('llm_provider', 'openai')
@@ -26,50 +26,50 @@ api_key = st.session_state.get('api_key', '')
 
 # Sidebar options
 with st.sidebar:
-    st.header("收藏库设置")
+    st.header("Library Settings")
     
-    st.header("分析选项")
-    enable_analysis = st.checkbox("启用AI分析", value=False)
+    st.header("Analysis Options")
+    enable_analysis = st.checkbox("Enable AI Analysis", value=False)
     
     if enable_analysis:
         analysis_type = st.selectbox(
-            "分析类型",
-            options=["摘要比较", "主题聚类", "研究趋势", "综合分析"],
+            "Analysis Type",
+            options=["Abstract Comparison", "Topic Clustering", "Research Trends", "Comprehensive Analysis"],
             index=0
         )
     
-    st.header("管理选项")
-    if st.button("清空收藏库"):
+    st.header("Management Options")
+    if st.button("Clear Library"):
         if st.session_state.bookmarks:
             st.session_state.bookmarks = {}
-            st.success("收藏库已清空")
+            st.success("Library cleared")
         else:
-            st.warning("收藏库为空")
+            st.warning("Library is empty")
 
 # Main library interface
 if not st.session_state.bookmarks:
-    st.warning("收藏库为空。在搜索页面中点击⭐按钮收藏论文。")
+    st.warning("Library is empty. Click the Save button in the Search page to save papers.")
 else:
     # Display bookmarked papers
-    st.subheader(f"收藏的论文 ({len(st.session_state.bookmarks)} 篇)")
+    st.subheader(f"Saved Papers ({len(st.session_state.bookmarks)} papers)")
     
     # Sort options
     sort_option = st.selectbox(
-        "排序方式",
-        options=["按添加时间", "按年份 (最新)", "按引用数 (最高)", "按标题 (A-Z)"],
+        "Sort By",
+        options=["Added Time", "Year (Newest)", "Citations (Highest)", "Title (A-Z)"],
         index=0
     )
     
     # Get and sort papers
     bookmarked_papers = list(st.session_state.bookmarks.values())
     
-    if sort_option == "按年份 (最新)":
+    if sort_option == "Year (Newest)":
         bookmarked_papers.sort(key=lambda x: x.get('year', 0), reverse=True)
-    elif sort_option == "按引用数 (最高)":
+    elif sort_option == "Citations (Highest)":
         bookmarked_papers.sort(key=lambda x: x.get('citation_count', 0), reverse=True)
-    elif sort_option == "按标题 (A-Z)":
+    elif sort_option == "Title (A-Z)":
         bookmarked_papers.sort(key=lambda x: x.get('title', '').lower())
-    # Default: 按添加时间 (保持字典插入顺序)
+    # Default: Added Time (keep dictionary insertion order)
     
     # Display papers
     for i, paper in enumerate(bookmarked_papers, 1):
@@ -80,30 +80,30 @@ else:
             # Tags
             tags = []
             if paper.get('is_top_venue', False):
-                tags.append("🟡 顶级会议")
+                tags.append("Top Venue")
             if paper.get('has_code', False):
-                tags.append("🟢 有代码")
+                tags.append("Has Code")
             if paper.get('is_highly_cited', False):
-                tags.append("🔴 高引用")
+                tags.append("Highly Cited")
             if paper.get('is_open_access', False):
-                tags.append("🔵 开放获取")
+                tags.append("Open Access")
             
             if tags:
-                st.markdown(f"**标签:** {' '.join(tags)}")
+                st.markdown(f"**Tags:** {' | '.join(tags)}")
             
             # Abstract (expandable)
-            with st.expander("摘要"):
+            with st.expander("Abstract"):
                 st.write(paper.get('abstract', 'No abstract available'))
             
             # Authors and venue
-            st.markdown(f"**作者:** {', '.join(paper.get('authors', []))}")
-            st.markdown(f"**发表场所:** {paper.get('venue', 'Unknown')}")
-            st.markdown(f"**年份:** {paper.get('year', 'Unknown')}")
-            st.markdown(f"**引用数:** {paper.get('citation_count', 0)}")
+            st.markdown(f"**Authors:** {', '.join(paper.get('authors', []))}")
+            st.markdown(f"**Venue:** {paper.get('venue', 'Unknown')}")
+            st.markdown(f"**Year:** {paper.get('year', 'Unknown')}")
+            st.markdown(f"**Citations:** {paper.get('citation_count', 0)}")
             
             # Remove button
             remove_key = f"remove_{i}_{hash(paper.get('title', ''))}"
-            if st.button(f"❌ 移除", key=remove_key):
+            if st.button(f"Remove", key=remove_key):
                 # Find and remove the paper from bookmarks
                 paper_id = None
                 for pid, p in st.session_state.bookmarks.items():
@@ -113,26 +113,26 @@ else:
                 
                 if paper_id:
                     del st.session_state.bookmarks[paper_id]
-                    st.success(f"已移除: {paper.get('title', 'Untitled')}")
+                    st.success(f"Removed: {paper.get('title', 'Untitled')}")
                     st.rerun()
 
 # AI Analysis section
 if enable_analysis and st.session_state.bookmarks:
     st.markdown("---")
-    st.subheader("🤖 AI 分析")
+    st.subheader("AI Analysis")
     
-    if st.button("生成分析报告"):
+    if st.button("Generate Analysis Report"):
         # Create a status container
         analysis_status = st.container()
-        analysis_status.info("正在分析收藏的论文...")
+        analysis_status.info("Analyzing saved papers...")
         
         try:
             # Get all bookmarked papers
             bookmarked_papers = list(st.session_state.bookmarks.values())
             
-            if analysis_type == "摘要比较":
+            if analysis_type == "Abstract Comparison":
                 # Generate comparison of abstracts
-                analysis_status.info("正在比较论文摘要...")
+                analysis_status.info("Comparing paper abstracts...")
                 
                 # Extract abstracts
                 abstracts = [f"Paper {i+1}: {paper.get('title', 'Untitled')}\nAbstract: {paper.get('abstract', 'No abstract')}" 
@@ -143,24 +143,24 @@ if enable_analysis and st.session_state.bookmarks:
                 analysis = curator.analyze_papers(bookmarked_papers, llm_provider, api_key)
                 
                 # Display analysis
-                with st.expander("摘要比较分析"):
-                    st.write(analysis.get('summary', '分析失败'))
+                with st.expander("Abstract Comparison Analysis"):
+                    st.write(analysis.get('summary', 'Analysis failed'))
                     
                     if analysis.get('comparison'):
-                        st.subheader("关键差异")
+                        st.subheader("Key Differences")
                         for diff in analysis.get('comparison', []):
                             st.markdown(f"- {diff}")
                             
         except Exception as e:
-            logger.error(f"分析失败: {e}")
-            analysis_status.error(f"分析失败: {str(e)}")
+            logger.error(f"Analysis failed: {e}")
+            analysis_status.error(f"Analysis failed: {str(e)}")
         
-        analysis_status.success("分析完成！")
+        analysis_status.success("Analysis complete!")
 
 # Quick stats
 if st.session_state.bookmarks:
     st.markdown("---")
-    st.subheader("📊 收藏库统计")
+    st.subheader("Library Statistics")
     
     # Calculate stats
     total_papers = len(st.session_state.bookmarks)
@@ -172,28 +172,28 @@ if st.session_state.bookmarks:
     # Display stats
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("总论文数", total_papers)
-        st.metric("有摘要", papers_with_abstracts)
+        st.metric("Total Papers", total_papers)
+        st.metric("With Abstract", papers_with_abstracts)
     with col2:
-        st.metric("有代码", papers_with_code)
-        st.metric("顶级会议", papers_top_venue)
+        st.metric("With Code", papers_with_code)
+        st.metric("Top Venue", papers_top_venue)
     with col3:
-        st.metric("高引用", papers_highly_cited)
+        st.metric("Highly Cited", papers_highly_cited)
         
         # Calculate average citation count
         total_citations = sum(p.get('citation_count', 0) for p in st.session_state.bookmarks.values())
         avg_citations = total_citations / total_papers if total_papers > 0 else 0
-        st.metric("平均引用", f"{avg_citations:.1f}")
+        st.metric("Avg Citations", f"{avg_citations:.1f}")
 
 # Future work suggestions
 st.markdown("---")
-st.subheader("💡 后续功能")
+st.subheader("Future Features")
 st.markdown("""
-- **批量操作**: 选择多篇论文进行批量分析或导出
-- **导出功能**: 导出收藏库为CSV、BibTeX或PDF
-- **笔记功能**: 为收藏的论文添加个人笔记
-- **引用追踪**: 追踪论文的引用网络和相关工作
-- **自动更新**: 定期更新论文的引用数和元数据
+- **Batch Operations**: Select multiple papers for batch analysis or export
+- **Export Function**: Export library to CSV, BibTeX or PDF
+- **Note Taking**: Add personal notes to saved papers
+- **Citation Tracking**: Track citation network and related work
+- **Auto Update**: Periodically update citation counts and metadata
 """)
 
-st.markdown("**提示:** 收藏的论文存储在会话状态中，刷新页面后仍然保留。")
+st.markdown("**Tip:** Saved papers are stored in session state and will persist after page refresh.")

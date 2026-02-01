@@ -83,14 +83,15 @@ class QueryExpander:
         }
         """
         
-        # If no API key, return basic expansion
+        # If no API key, return basic expansion but still extract venues
         if not api_key:
+            venue_filter = self.extract_venues(user_query)
             return {
                 "search_query": user_query,
-                "venue_filter": "",
+                "venue_filter": venue_filter,
                 "year_range": "",
                 "domain": "General",
-                "explanation": "No API key provided, using original query"
+                "explanation": "No API key provided, using original query but extracted venue"
             }
         
         try:
@@ -112,12 +113,15 @@ class QueryExpander:
             print(f"Error expanding query: {e}")
         
         # Return original query if any error occurs
+        # But still extract venues from the original query
+        venue_filter = self.extract_venues(user_query)
+        
         return {
             "search_query": user_query,
-            "venue_filter": "",
+            "venue_filter": venue_filter,
             "year_range": "",
             "domain": "General",
-            "explanation": "Query expansion failed, using original query"
+            "explanation": "Query expansion failed, using original query but extracted venue"
         }
     
     def extract_venues(self, user_query: str) -> str:

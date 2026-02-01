@@ -13,7 +13,7 @@ def enrich_and_tag(raw_papers: list) -> List[Paper]:
     Enrich raw paper data and add tags
     
     Args:
-        raw_papers: List of raw paper dictionaries from Semantic Scholar API
+        raw_papers: List of raw paper dictionaries from various APIs
         
     Returns:
         List of Paper objects with tags
@@ -21,19 +21,45 @@ def enrich_and_tag(raw_papers: list) -> List[Paper]:
     tagged_papers = []
     
     for raw_paper in raw_papers:
+        # Process authors - handle different formats
+        raw_authors = raw_paper.get("authors", [])
+        processed_authors = []
+        
+        if isinstance(raw_authors, list):
+            for author in raw_authors:
+                if isinstance(author, str):
+                    processed_authors.append(author)
+                elif isinstance(author, dict):
+                    # Handle {'@pid': '...', 'text': 'Name'} format from DBLP
+                    name = author.get('text', author.get('name', author.get('display_name', '')))
+                    if name:
+                        processed_authors.append(name)
+        elif isinstance(raw_authors, str):
+            processed_authors = [raw_authors]
+        
         # Create Paper object
         try:
             paper = Paper(
                 title=raw_paper.get("title", ""),
-                authors=raw_paper.get("authors", []),
+                authors=processed_authors,
                 year=raw_paper.get("year", 0),
                 abstract=raw_paper.get("abstract", ""),
                 url=raw_paper.get("url", ""),
-                citation_count=raw_paper.get("citationCount", 0),
-                venue=raw_paper.get("venue", "")
+                citation_count=raw_paper.get("citationCount", raw_paper.get("citation_count", 0)),
+                venue=raw_paper.get("venue", ""),
+                source=raw_paper.get("source", ""),
+                status=raw_paper.get("status", ""),
+                verified_in_db=raw_paper.get("verified_in_db", True),
+                llm_confidence=raw_paper.get("llm_confidence", 0.0),
+                llm_reasoning=raw_paper.get("llm_reasoning", raw_paper.get("llm_recommendation_reason", "")),
+                llm_relevance_score=raw_paper.get("llm_relevance_score", 0),
+                quality_score=raw_paper.get("quality_score", 0.0),
+                score_breakdown=raw_paper.get("score_breakdown", None),
+                is_baseline=raw_paper.get("is_baseline", False)
             )
         except Exception as e:
             logger.error(f"Error creating Paper object: {e}")
+            logger.error(f"Raw paper data: {raw_paper}")
             continue
         
         # Add tags

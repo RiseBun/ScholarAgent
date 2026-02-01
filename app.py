@@ -6,7 +6,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 st.set_page_config(
-    page_title="ScholarAgent - 科研猎手",
+    page_title="ScholarAgent - Research Hunter",
     page_icon="🔍",
     layout="wide"
 )
@@ -42,33 +42,34 @@ if 'feedback_given' not in st.session_state:
     st.session_state.feedback_given = False
 
 # Main welcome page
-st.title("🔍 ScholarAgent - 科研猎手")
-st.markdown("### 智能科研助手系统")
+st.title("ScholarAgent - Research Hunter")
+st.markdown("### Intelligent Research Assistant System")
 
 st.markdown("""
-ScholarAgent 是一个专为科研人员设计的智能科研助手系统，能够模拟真实科研工作者的完整科研旅程：
+ScholarAgent is an intelligent research assistant system designed for researchers, 
+capable of simulating the complete research journey of real researchers:
 
-**核心功能：**
+**Core Features:**
 
-- **快速搜索**：智能AI查询理解，多数据源搜索，实时结果展示
-- **论文收藏**：将重要论文加入个人图书馆，方便后续分析
-- **深度分析**：基于收藏论文进行对比、总结和灵感生成
+- **Quick Search**: Intelligent AI query understanding, multi-source search, real-time results
+- **Paper Library**: Save important papers to your personal library for further analysis
+- **Deep Analysis**: Compare, summarize, and generate insights from saved papers
 
-**使用指南：**
-1. 在左侧导航栏选择功能页面
-2. 配置LLM提供商和API密钥
-3. 开始您的科研探索之旅
+**User Guide:**
+1. Select a feature page from the left navigation
+2. Configure LLM provider and API key
+3. Start your research exploration journey
 """)
 
 st.markdown("---")
 
 # Global settings
 with st.sidebar:
-    st.header("全局设置")
+    st.header("Global Settings")
     
-    st.header("LLM设置")
+    st.header("LLM Settings")
     llm_provider = st.selectbox(
-        "选择LLM提供商",
+        "Select LLM Provider",
         options=["openai", "qianwen", "deepseek", "gemini", "openrouter"],
         index=0
     )
@@ -91,4 +92,4 @@ with st.sidebar:
     st.session_state.llm_provider = llm_provider
     st.session_state.api_key = api_key
 
-st.markdown("**ScholarAgent - 让科研更智能，让灵感更闪耀！** ✨")
+st.markdown("**ScholarAgent - Making research smarter, making inspiration brighter!**")

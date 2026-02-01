@@ -83,17 +83,20 @@ class LLMClient:
                 self._genai = None
                 
                 # Set up headers (OpenRouter needs special headers)
-                extra_headers = {}
+                extra_headers = {
+                    "Content-Type": "application/json; charset=utf-8",
+                }
                 if self.provider == "openrouter":
-                    extra_headers = {
+                    extra_headers.update({
                         "HTTP-Referer": "http://localhost",
                         "X-Title": "ScholarAgent",
-                    }
+                    })
 
                 self._http_client = httpx.Client(
                     trust_env=True, 
                     timeout=request_timeout,
-                    headers=extra_headers
+                    headers=extra_headers,
+                    default_encoding="utf-8"
                 )
                 
                 base_url_env_var = config.get("base_url_env_var")
