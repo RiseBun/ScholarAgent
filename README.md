@@ -1,285 +1,220 @@
-# ScholarAgent - 原计划年前开源，由于作者宁波出差，为避免出现体验问题等年后上传全部代码，（核心文件夹backend未上传）
+# ScholarAgent - 科研猎手     
 
-ScholarAgent 是一个智能科研助手系统，专为科研人员设计，能够模拟真实科研工作者的找资料、看论文、找idea的完整旅程。
+## 由于作者宁波出差，为避免出现体验问题等年后上传全部代码，（核心文件夹backend未上传）,将上架huggingface
+
+ScholarAgent 是一个基于LLM的智能科研助手系统，采用**混合检索架构**，将大语言模型的语义理解能力与传统学术数据库检索相结合，显著提升论文搜索的精准度和相关性。
+
+## 🔬 技术创新点
+
+### 1. LLM驱动的混合检索架构
+- **创新**：将LLM语义理解与传统数据库检索深度融合，而非简单叠加
+- **方法**：LLM先召回领域经典论文标题 → 数据库验证存在性 → LLM语义重排序
+- **优势**：解决传统关键词匹配无法理解缩写（如"VLA"="Vision-Language-Action"）的问题
+
+### 2. 多源异构数据融合
+- **arXiv**：预印本论文，时效性强
+- **DBLP**：会议论文，venue信息准确
+- **OpenAlex**：引用数据丰富，覆盖全面
+- **策略**：三源互补，解决单一数据源的覆盖盲区
+
+### 3. 两阶段语义重排序
+| 阶段 | 方法 | 作用 |
+|------|------|------|
+| 粗排 | HybridScorer多维评分 | 快速筛选Top-N候选 |
+| 精排 | LLM Semantic Rerank | 深度理解用户意图 |
+
+### 4. 用户意图闭环优化
+```
+Query → AI解释 → 用户反馈 → 重新理解 → 搜索
+```
+解决科研查询的模糊性问题，用户可实时修正AI的理解偏差。
+
+## 📊 核心算法
+
+### 多路召回策略
+```
+用户查询 "VLA"
+    │
+    ├─→ [LLM召回] 基于领域知识生成10篇经典论文标题
+    │
+    ├─→ [Query扩展] "VLA" → "Vision-Language-Action OR Multimodal LLM for Robotics"
+    │
+    └─→ [多源并发检索]
+         ├─ arXiv API (最新预印本)
+         ├─ DBLP API (会议论文，venue准确)
+         └─ OpenAlex API (引用数据)
+```
+
+### 多维质量评分公式
+```python
+Score = Relevance × 0.30 + Citation × 0.25 + Venue × 0.30 + Recency × 0.15
+```
+
+| 维度 | 计算方法 |
+|------|----------|
+| **Relevance** | 查询词与标题/摘要的TF-IDF相似度 |
+| **Citation** | log(引用数+1) 归一化到[0,1] |
+| **Venue** | 顶会=1.0, 次顶会=0.9, 其他=0 |
+| **Recency** | 1 - 0.1 × (当前年 - 发表年) |
+
+### 结果多样化：MMR算法
+```python
+# Maximal Marginal Relevance - 避免结果同质化
+while len(selected) < top_n:
+    similarity = cosine_similarity(tfidf[candidates], tfidf[selected])
+    next_paper = argmin(max(similarity, axis=1))  # 选最不相似的
+    selected.append(next_paper)
+```
 
 ## 🎯 核心功能
 
 ### 1. 快速搜索 (Quick Search)
-- 自然语言查询，支持多LLM提供商
+- 自然语言查询，支持多LLM提供商（OpenAI、Qianwen、DeepSeek、Gemini）
 - 智能AI查询解释：自动理解用户意图并生成标准化查询
 - 用户可控的解释反馈：可对AI解释进行修改和优化
-- 增强型数据源搜索：arXiv + OpenAlex（更全面的学术覆盖）
-- 流式结果显示，实时展示搜索结果
-- 多维度论文标签：代码可用性、顶级会议、引用量、开放获取
-- 分页功能：支持多页浏览和历史记录跟踪
-- 智能论文重排序：基于相关性和质量的LLM驱动排序
+- 多维度论文标签：顶级会议、引用量、代码可用性、开放获取
+- LLM驱动的语义重排序，识别"必读baseline"论文
 
 ### 2. 知识景观生成 (Landscape Mapping)
 - 生成研究领域全景图，识别热点、蓝海和红海
 - 论文聚类分析，展示不同研究方向
-- 可视化展示研究趋势和分布
-- 帮助用户快速找到领域切入点
 
 ### 3. 极速快读 (Quick Scan)
 - 批量分析论文核心贡献、弱点和未来工作
 - 生成论文比较表格，快速识别研究漏洞
-- 提取关键信息，节省阅读时间
-- 帮助用户快速筛选有价值的论文
 
 ### 4. 灵感缝合 (Idea Breeder)
 - 多Agent辩论：乐观视角 vs 批判视角
-- 跨学科类比搜索，寻找灵感
-- 可行性分析和资源评估
-- 帮助用户完善和验证研究想法
+- 跨学科类比搜索，可行性分析
 
 ### 5. 撞车预警 (Scoop Checker)
 - 检测研究想法是否被抢占
 - 提供差异化策略和方向建议
-- 分析研究空白和机会
-- 帮助用户避免重复工作，找到独特价值
 
 ## 🔧 技术架构
 
-### 前端
-- Streamlit：交互式Web界面
-- 响应式设计，支持多模式切换
-- 实时状态反馈和进度显示
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Frontend (Streamlit)                    │
+├─────────────────────────────────────────────────────────────┤
+│  QueryExpander │ HybridSearch │ LLMReranker │ HybridScorer  │
+├─────────────────────────────────────────────────────────────┤
+│     LLMPaperRecaller    │       PaperFetcher                │
+├─────────────────────────────────────────────────────────────┤
+│   arXiv API   │   DBLP API   │   OpenAlex API   │   LLM API │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### 后端
+### 后端核心组件
+| 组件 | 文件 | 功能 |
+|------|------|------|
+| **HybridSearchEngine** | `hybrid_search.py` | 混合检索主引擎，协调各组件 |
+| **LLMPaperRecaller** | `llm_paper_recaller.py` | LLM直接召回经典论文标题 |
+| **QueryExpander** | `query_expander.py` | AI驱动的查询语义扩展 |
+| **PaperFetcher** | `search_engine.py` | 多源并发论文检索 |
+| **HybridScorer** | `hybrid_scorer.py` | 多维质量评分 |
+| **LLMReranker** | `llm_reranker.py` | LLM语义精排序 |
+| **Tagger** | `tagger.py` | 论文多维标签生成 |
+
+## 🚀 快速开始
+
+### 环境要求
 - Python 3.10+
-- 多LLM提供商支持：OpenAI、Qianwen、DeepSeek、Gemini、OpenRouter
-- 增强型数据源集成：arXiv API + OpenAlex API（替代Semantic Scholar，提供更全面的学术覆盖）
-- 机器学习：scikit-learn（聚类和相似度计算）
-- 数据可视化：matplotlib
-- 智能组件：
-  - QueryExpander：AI驱动的查询扩展和标准化
-  - ContentCurator：LLM驱动的论文重排序和质量评估
-  - 分页系统：支持多页浏览和历史记录管理
+- 网络连接（API调用）
+- LLM API密钥（至少一个）
 
-## 🚀 本地部署
+### 安装步骤
 
-### 1. 环境要求
-- Python 3.10 或更高版本
-- pip 包管理工具
-- 网络连接（用于API调用）
-
-### 2. 安装步骤
-
-#### 步骤1：克隆项目
 ```bash
+# 1. 克隆项目
 git clone <repository-url>
 cd ScholarAgent
-```
 
-#### 步骤2：创建和激活conda环境
-```bash
-# 创建conda环境
+# 2. 创建conda环境
 conda create -n scholaragent python=3.10
-
-# 激活环境
 conda activate scholaragent
-```
 
-#### 步骤3：安装依赖
-```bash
+# 3. 安装依赖
 pip install -r requirements.txt
-```
 
-#### 步骤4：配置API密钥
-在Streamlit应用中，通过侧边栏的"API Keys"部分输入您的LLM提供商API密钥：
-- OpenAI: [获取API密钥](https://platform.openai.com/api-keys)
-- Qianwen: [获取API密钥](https://dashscope.aliyun.com/)
-- DeepSeek: [获取API密钥](https://platform.deepseek.com/)
-- Gemini: [获取API密钥](https://makersuite.google.com/)
-- OpenRouter: [获取API密钥](https://openrouter.ai/)
-
-### 3. 启动应用
-```bash
+# 4. 启动应用
 streamlit run app.py
 ```
 
-应用将在浏览器中打开，默认地址为：`http://localhost:8501`
-
-## 📖 使用指南
-
-### 快速开始
-1. **选择模式**：在侧边栏的"Navigation"中选择您需要的功能模式
-2. **配置设置**：选择LLM提供商并输入API密钥
-3. **输入查询**：根据不同模式的要求输入您的研究查询或想法
-4. **AI查询解释**（快速搜索模式）：
-   1. 点击"🤖 Interpret Query"按钮分析查询
-   2. 查看AI生成的标准化查询和解释
-   3. 提供反馈并修改解释（如需）
-   4. 点击"✅ Approve Interpretation"确认满意
-5. **开始搜索**：点击"🔍 Start Search"按钮开始搜索
-6. **查看结果**：系统将处理您的请求并显示相应的结果
-7. **分页浏览**：
-   1. 使用"🔄 Refresh"按钮加载下一页
-   2. 在"📋 View History Pages"中查看和导航到历史页面
-
-### 功能模式说明
-
-#### 1. 快速搜索
-- **输入**：研究主题或关键词
-- **AI处理**：自动分析意图，生成标准化查询
-- **用户交互**：可审核和修改AI解释，提供反馈
-- **输出**：相关论文列表，包含标题、摘要、链接和多维度标签
-- **分页**：支持多页浏览和历史记录跟踪
-- **用途**：快速获取相关论文，了解研究现状，发现研究机会
-
-#### 2. 知识景观生成
-- **输入**：研究领域（如"人工智能"、"计算机视觉"）
-- **输出**：领域全景图、研究聚类和趋势分析
-- **用途**：了解领域结构，找到研究方向
-
-#### 3. 极速快读
-- **输入**：研究主题
-- **输出**：论文分析表格，包含核心贡献、弱点和未来工作
-- **用途**：快速筛选论文，识别研究机会
-
-#### 4. 灵感缝合
-- **输入**：研究想法描述
-- **输出**：多Agent辩论、跨学科灵感、可行性分析
-- **用途**：完善研究想法，获得多维度反馈
-
-#### 5. 撞车预警
-- **输入**：详细的研究想法
-- **输出**：撞车风险评估、相似论文、差异化建议
-- **用途**：避免重复工作，找到独特价值
+### 配置API密钥
+在Streamlit侧边栏输入LLM API密钥：
+- [OpenAI](https://platform.openai.com/api-keys)
+- [Qianwen/通义千问](https://dashscope.aliyun.com/)
+- [DeepSeek](https://platform.deepseek.com/)
+- [Gemini](https://makersuite.google.com/)
+- [OpenRouter](https://openrouter.ai/)
 
 ## 📁 项目结构
 
-```text
+```
 ScholarAgent/
-├── app.py                 # 主Streamlit应用
-├── requirements.txt       # 依赖项配置
-├── README.md              # 项目说明
-├── test_backend.py        # 后端测试
-├── test_full_search.py    # 完整搜索流程测试
-├── test_openalex.py       # OpenAlex API测试
-├── test_openalex_detailed.py # OpenAlex详细测试
-├── test_tagger.py         # 标签生成测试
+├── app.py                      # 主应用入口
+├── requirements.txt            # 依赖配置
+├── pages/
+│   ├── 1_🔍_Search.py          # 快速搜索页面
+│   └── 2_📚_Library.py         # 论文库页面
 └── backend/
-    ├── __init__.py
-    ├── agent.py           # LLM意图识别
-    ├── data_models.py     # 论文数据模型
-    ├── search_engine.py    # 论文搜索引擎
-    ├── tagger.py          # 论文标签生成
-    ├── landscape.py       # 知识景观生成
-    ├── quickscan.py       # 极速快读功能
-    ├── ideabreeder.py     # 灵感缝合功能
-    ├── scoop_checker.py    # 撞车预警功能
-    ├── query_expander.py   # AI查询扩展和解释
-    └── content_curator.py  # 论文内容重排序和质量评估
+    ├── agent.py                # LLM客户端封装
+    ├── hybrid_search.py        # 混合检索引擎
+    ├── search_engine.py        # 多源论文检索
+    ├── query_expander.py       # 查询语义扩展
+    ├── llm_paper_recaller.py   # LLM论文召回
+    ├── llm_reranker.py         # LLM语义重排序
+    ├── hybrid_scorer.py        # 多维质量评分
+    ├── tagger.py               # 论文标签生成
+    ├── data_models.py          # 数据模型定义
+    ├── content_curator.py      # 内容策展
+    ├── landscape.py            # 知识景观生成
+    ├── quickscan.py            # 极速快读
+    ├── ideabreeder.py          # 灵感缝合
+    └── scoop_checker.py        # 撞车预警
+```
+
+## 🔍 搜索流程
+
+```
+1. 用户输入查询
+       ↓
+2. [并行] LLM召回 + Query扩展
+       ↓
+3. [并行] arXiv/DBLP/OpenAlex 多源检索
+       ↓
+4. 智能去重与数据融合
+       ↓
+5. HybridScorer 多维评分（粗排）
+       ↓
+6. LLMReranker 语义重排序（精排）
+       ↓
+7. MMR 结果多样化
+       ↓
+8. 返回带标签的论文列表
 ```
 
 ## 🛠️ 技术栈
 
-### 核心依赖
-- `streamlit`：Web界面框架
-- `openai`：OpenAI API客户端
-- `pydantic`：数据模型验证
-- `scikit-learn`：机器学习（聚类和相似度计算）
-- `matplotlib`：数据可视化
-- `numpy`：数值计算
-- `joblib`：缓存和并行处理
-- `httpx`：HTTP客户端（用于API调用）
-- `arxiv`：arXiv API客户端
-- `tenacity`：重试机制（用于API调用）
-
-### 数据源
-- **arXiv API**：快速获取预印本论文
-- **OpenAlex API**：全面的学术论文数据库
-
-### 智能组件
-- **QueryExpander**：AI驱动的查询理解和扩展
-- **ContentCurator**：LLM驱动的论文重排序和质量评估
-- **PaperFetcher**：增强型论文搜索和获取
-- **Tagger**：多维度论文标签生成
-
-## 🔍 搜索流程
-
-1. **用户输入**：自然语言查询
-2. **AI查询解释**：
-   1. QueryExpander分析查询意图
-   2. 生成标准化搜索查询
-   3. 提取相关术语和venue信息
-   4. 显示详细解释供用户审核
-3. **用户反馈**：
-   1. 用户可查看和修改AI解释
-   2. 提供反馈以优化查询理解
-   3. 确认满意后开始搜索
-4. **增强型数据源搜索**：
-   1. 首先搜索arXiv（速度快）
-   2. 然后搜索OpenAlex（更全面的学术覆盖）
-   3. 智能分页：基于offset的结果获取
-5. **结果处理**：
-   1. 去重和数据标准化
-   2. 多维度标签生成
-   3. 智能过滤和筛选
-6. **LLM驱动的重排序**：
-   1. ContentCurator基于相关性和质量重排序
-   2. 考虑用户意图和研究价值
-7. **流式显示**：实时展示搜索结果
-8. **分页管理**：
-   1. 支持多页浏览
-   2. 历史记录跟踪
-   3. 页面导航功能
-
-## 📊 数据分析流程
-
-### 知识景观生成
-1. 关键词扩展 → 多源搜索 → 论文聚类 → 趋势分析 → 可视化生成
-
-### 极速快读
-1. 论文搜索 → LLM摘要分析 → 核心信息提取 → 比较表格生成
-
-### 灵感缝合
-1. 想法输入 → 多Agent辩论 → 类比搜索 → 可行性分析 → 建议生成
-
-### 撞车预警
-1. 想法输入 → 关键词提取 → 相似论文搜索 → 相似度计算 → 风险评估 → 差异化建议
-
-## 🎨 用户界面
-
-- **侧边栏**：导航菜单、LLM设置、API密钥配置
-- **主界面**：根据选择的模式显示相应的功能界面
-- **响应式设计**：适配不同屏幕尺寸
-- **实时反馈**：操作状态和进度显示
-
-## 🌟 特色优势
-
-1. **模拟真实科研旅程**：从找方向到验证想法的完整流程
-2. **多LLM支持**：灵活选择不同的语言模型提供商
-3. **增强型数据源**：arXiv + OpenAlex，兼顾速度和全面性
-4. **智能AI查询理解**：自动分析意图，生成标准化查询
-5. **用户可控的交互**：可修改和优化AI解释，确保查询准确性
-6. **LLM驱动的智能分析**：利用语言模型提供深度论文分析
-7. **智能分页系统**：支持多页浏览和历史记录管理
-8. **自适应搜索策略**：无结果时自动调整搜索范围
-9. **用户友好**：直观的Web界面，易于使用
-10. **可扩展性**：模块化设计，易于添加新功能
+- **前端**：Streamlit
+- **后端**：Python 3.10+, asyncio
+- **LLM**：OpenAI API / 通义千问 / DeepSeek / Gemini
+- **数据源**：arXiv API, DBLP API, OpenAlex API
+- **ML**：scikit-learn (TF-IDF, 余弦相似度, 聚类)
+- **数据验证**：Pydantic
 
 ## 📝 注意事项
 
-1. **API密钥**：部分功能需要有效的LLM API密钥才能使用
-2. **网络连接**：需要稳定的网络连接以调用外部API
-3. **搜索速度**：取决于网络状况和API响应速度
-4. **结果质量**：依赖于LLM的性能和API的返回结果
-5. **数据限制**：受限于API的速率限制和使用配额
-
-## 🤝 贡献
-
-欢迎提交Issue和Pull Request，帮助改进ScholarAgent！
+1. **API密钥**：需要有效的LLM API密钥
+2. **网络环境**：部分API可能需要代理访问
+3. **速率限制**：arXiv有请求频率限制，系统已内置自动降级机制
+4. **结果质量**：依赖LLM性能，推荐使用GPT-4或同等模型
 
 ## 📄 许可证
 
 MIT License
 
-## 📞 联系方式
-
-如有问题或建议，请通过Issue与我们联系。
-
 ---
 
-**ScholarAgent - 让科研更智能，让灵感更闪耀！** ✨
+**ScholarAgent - 让科研更智能，让灵感更闪耀！**
